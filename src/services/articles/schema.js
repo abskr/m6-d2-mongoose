@@ -17,8 +17,26 @@ const ArticleSchema = new Schema(
       required: true
     },
     category: {
-      name: { type: String, required: true},
-      img : String
+      name: {
+        enum: [
+          "POPULAR",
+          "MOMENTUM",
+          "CORONAVIRUS",
+          "ONEZERO",
+          "ELEMENTAL",
+          "GEN",
+          "ZORA",
+          "FORGE",
+          "HUMAN PARTS",
+          "MARKER",
+          "LEVEL",
+          "HEATED",
+        ]
+      },
+      img: {
+          type: String,
+          default: 'https://via.placeholder.com/150'
+        }
     },
     author: {
       name: {
@@ -27,9 +45,16 @@ const ArticleSchema = new Schema(
       },
       img: String
     },
-    cover : String
-
-  }, {timestamps: true}
-)
+    cover: {
+      type: String,
+      default: 'https://via.placeholder.com/150'
+    },
+    reviews: [{
+      text: String,
+      user: String
+    },{timestamps: true}]
+    },
+    {timestamps: true}
+  )
 
 export default model("Articles", ArticleSchema)
