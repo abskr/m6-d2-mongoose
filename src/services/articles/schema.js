@@ -38,23 +38,49 @@ const ArticleSchema = new Schema(
           default: 'https://via.placeholder.com/150'
         }
     },
-    author: {
-      name: {
-        type: String,
-        required: true
-      },
-      img: String
-    },
+    authors: [{
+      type: Schema.Types.ObjectId, required: true, ref: 'Author' 
+    }],
     cover: {
       type: String,
       default: 'https://via.placeholder.com/150'
     },
     reviews: [{
-      text: String,
-      user: String
-    },{timestamps: true}]
+      type : new Schema(
+        {
+          text : {type: String, required: true},
+          user : {type: String, trim: true}
+        }
+        // ,{
+        //   timestamps: true
+        // }
+      )
+    }]
     },
     {timestamps: true}
   )
+
+  ArticleSchema.post('validate', function (error, doc, next){
+    if (error) {
+      error.errorList = error.errors
+      error.httpStatusCode = 400
+      next(error)
+    } else {
+      next()
+    }
+  })
+
+  ArticleSchema.static('findArticleWithAuthors', async function (articleId) {
+    const article = await this.findOne({ _id: articleId}).populate('authors')
+    return article
+  })
+
+  ArticleSchema.static('findArticlesWithAuthors', async function (query) {
+    const total = await this.countDocuments(query.criteria)
+    const articles = await this.find(query.criteria).skip(0).limit(query.options.limit).sort(query.options.sort).populate('authors')
+
+    return { total, articles }
+  })
+
 
 export default model("Articles", ArticleSchema)
