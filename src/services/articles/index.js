@@ -7,20 +7,28 @@ import ArticleModel from './schema.js'
 const articlesRouter = express.Router()
 
 articlesRouter.get('/', async (req, res, next) => {
+  // try {
+  //   // const articles = await ArticleModel.find()
+  //   // res.send(articles)
+  //   const query = q2m(req.query)
+  //   //console.log(query)
+  //   const totalArticles = await ArticleModel.countDocuments(query.criteria)
+  //   // console.log(totalArticles)
+    
+  //   const articles = await ArticleModel.find(query.criteria, query.options.fields)
+  //   .skip(query.options.skip)
+  //   .limit(query.options.limit)
+  //   .sort(query.options.sort)
+    
+  //   res.send({ links: query.links('/articles', totalArticles), articles})
+  // } catch (error) {
+  //   console.log(error)
+  //   next(error)
+  // }
   try {
-    // const articles = await ArticleModel.find()
-    // res.send(articles)
     const query = q2m(req.query)
-    //console.log(query)
-    const totalArticles = await ArticleModel.countDocuments(query.criteria)
-    // console.log(totalArticles)
-    
-    const articles = await ArticleModel.find(query.criteria, query.options.fields)
-    .skip(query.options.skip)
-    .limit(query.options.limit)
-    .sort(query.options.sort)
-    
-    res.send({ links: query.links('/articles', totalArticles), articles})
+    const { articles, total } = await ArticleModel.findArticlesWithAuthors(query)
+    res.send({ links: query.links('/articles', total), articles})
   } catch (error) {
     console.log(error)
     next(error)
@@ -28,11 +36,25 @@ articlesRouter.get('/', async (req, res, next) => {
 })
 
 articlesRouter.get('/:id', async (req, res, next) => {
+  // try {
+  //   const id = req.params.id
+  //   const article = await ArticleModel.findById(id)
+  //   if(article){
+  //     res.send(article)
+  //   }
+  // } catch (error) {
+  //   console.log(error)
+  //   next(error)
+  // }
+
   try {
-    const id = req.params.id
-    const article = await ArticleModel.findById(id)
-    if(article){
+    const article = await ArticleModel.findArticleWithAuthors(req.params.id)
+    if (article) {
       res.send(article)
+    } else {
+      const error = new Error()
+      error.httpStatusCode = 404
+      next(error)
     }
   } catch (error) {
     console.log(error)
@@ -44,7 +66,7 @@ articlesRouter.post('/', async (req, res, next) => {
   try {
     const newArticle = new ArticleModel(req.body)
     const {_id} = await newArticle.save()
-    res.status(201).send('Data is saved!')
+    res.status(201).send(`data is saved with id: ${_id}`)
   } catch (error) {
     console.log(error)
     next(error)
@@ -121,13 +143,14 @@ articlesRouter.get('/:articleId/reviews/:reviewId', async (req, res, next) => {
 
 articlesRouter.post('/:articleId', async (req, res, next) => {
   try {
+    // const reviewToPost = {...req.body, date: new Date()}
     const updatedArticle = await ArticleModel.findByIdAndUpdate(
       req.params.articleId,
       {
         $push: {
           reviews: req.body
-        }
-      },
+      }
+    },
       { runValidators: true, new:true }
     )
     res.send(updatedArticle)
@@ -145,7 +168,12 @@ articlesRouter.put('/:articleId/reviews/:reviewId', async (req, res, next) => {
         "reviews._id": mongoose.Types.ObjectId(req.params.reviewId)
       },
       {
-        $set: { 'reviews.$': req.body}
+        $set: {
+          'reviews.$': {
+            ...req.body,
+            _id: req.params.reviewId
+          }
+        }
       },
       {
         runValidators: true,
