@@ -4,6 +4,7 @@ import listEndpoints from 'express-list-endpoints'
 import mongoose from 'mongoose'
 
 import articlesRouter from './services/articles/index.js'
+import authorsRouter from './services/authors/index.js'
 import usersRouter from './services/users/index.js'
 
 import { notFoundErrorHandler, badRequestErrorHandler, forbiddenErrorHandler,catchAllErrorHandler} from './errorHandler.js'
@@ -17,6 +18,7 @@ server.use(express.json())
 server.use(cors())
 
 server.use('/articles', articlesRouter)
+server.use('/authors', authorsRouter)
 server.use('/users', usersRouter)
 
 //ERROR HANDLERS
